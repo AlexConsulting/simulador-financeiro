@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Futuro Financeiro e Previdenciário (V10.7)</title>
+    <title>Simulador Financeiro e Previdenciário (V10.8)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
@@ -60,7 +60,7 @@
     <div class="max-w-6xl mx-auto bg-white p-6 sm:p-10 rounded-3xl card">
         <header class="text-center mb-10">
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800">
-                Simulador Financeiro e Previdenciário (V10.7)
+                Simulador Financeiro e Previdenciário (V10.8)
             </h1>
             <p class="text-lg text-gray-500 mt-2">
                 Simulação Previdenciária e Projeção de Múltiplos Investimentos.
@@ -75,7 +75,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="birth_date" class="block text-sm font-medium text-gray-700">Data de Nascimento</label>
-                        <input type="date" id="birth_date" value="1990-01-01" class="mt-1 block w-full input-text rounded-lg">
+                        <input type="date" id="birth_date" value="" class="mt-1 block w-full input-text rounded-lg">
                         <p id="current_age_display" class="mt-2 text-sm font-semibold text-indigo-600"></p>
                     </div>
 
@@ -95,14 +95,14 @@
 
                     <div>
                         <label for="current_salary" class="block text-sm font-medium text-gray-700">Salário Atual (R$)</label>
-                        <input type="number" id="current_salary" value="3000" min="0" step="100" class="mt-1 block w-full input-text rounded-lg">
+                        <input type="number" id="current_salary" value="0" min="0" step="100" class="mt-1 block w-full input-text rounded-lg">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <div>
-                        <label for="cnis_start_year" class="block text-sm font-medium text-gray-700">Histórico Salarial CNIS a Partir de (Ano)</label>
-                        <input type="number" id="cnis_start_year" value="2010" min="1994" max="2025" class="mt-1 block w-full input-text rounded-lg" onchange="generateSalaryTable(); calculateAndDisplayProjections()">
+                        <label for="cnis_start_year" class="block text-sm font-medium text-gray-700">Histórico Salarial CNIS a Partir de (Informe o Ano Desejado, Ex: 1994)</label>
+                        <input type="number" id="cnis_start_year" value="0" min="1994" max="2025" class="mt-1 block w-full input-text rounded-lg" onchange="generateSalaryTable(); calculateAndDisplayProjections()">
                     </div>
                     
                     <div class="flex items-start flex-col">
@@ -219,7 +219,7 @@
         </section>
         
         <footer class="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500 space-y-2">
-            <p>© 2025 Alex Silva.</p>
+            <p>© 2025 Alex Silva - todos os direitos reservados.</p>
             <p class="italic text-xs text-red-500">
                 ⚠️ Este é apenas um simulador sujeito a falhas. Os cálculos são ESTIMADOS e não substituem uma consulta com um profissional qualificado em planejamento previdenciário e financeiro.
             </p>
@@ -264,7 +264,7 @@
         google.charts.load('current', {'packages':['corechart']});
 
         // --- Variáveis Globais e Constantes ---
-        const CURRENT_VERSION = "V10.7";
+        const CURRENT_VERSION = "V10.8";
         const MIN_AGE_M = 65; 
         const MIN_CONTRIBUTION_M = 35; 
         const MIN_AGE_F = 62; 
@@ -304,6 +304,7 @@
         }
         
         function calculateAge(birthDateString) {
+            if (!birthDateString) return 0; // Se a data estiver em branco, retorna 0
             const birthDate = new Date(birthDateString);
             const today = new Date();
             let age = today.getFullYear() - birthDate.getFullYear();
@@ -335,9 +336,10 @@
             const id = data.id || investmentCounter;
             newDiv.id = `inv_${id}`;
 
-            const initialValue = data.initial !== undefined ? data.initial : 10000;
-            const monthlyValue = data.monthly !== undefined ? data.monthly : 500;
-            const interestValue = data.interest !== undefined ? (data.interest * 100).toFixed(1) : 8.0; 
+            // VALORES INICIAIS ZERADOS AQUI (V10.8)
+            const initialValue = data.initial !== undefined ? data.initial : 0;
+            const monthlyValue = data.monthly !== undefined ? data.monthly : 0;
+            const interestValue = data.interest !== undefined ? (data.interest * 100).toFixed(1) : 0.0; 
 
             newDiv.innerHTML = `
                 <button type="button" class="remove-btn" onclick="removeInvestmentField('inv_${id}')">×</button>
@@ -397,11 +399,15 @@
             const currentYear = new Date().getFullYear();
             
             const startYearInput = document.getElementById('cnis_start_year');
-            let startYear = parseInt(startYearInput.value) || 1994;
+            let startYear = parseInt(startYearInput.value) || 0; // Pega o valor 0 inicial
 
             if (startYear < 1994 || startYear > currentYear) {
-                startYear = 1994;
-                startYearInput.value = 1994;
+                // Se o campo estiver 0 ou inválido, não gera a tabela
+                document.getElementById('total_contributed_time_display').innerHTML = 
+                    `Tempo de Contribuição Total Válido: <span class="text-error">0 anos e 0 meses</span>`;
+                document.getElementById('average_salary_display').innerHTML = 
+                    `Média Salarial de Contribuição (Mensal Base): <span class="text-error">R$ 0,00</span>`;
+                return;
             }
 
             const endYear = Math.max(currentYear, 2025); 
@@ -427,7 +433,7 @@
         }
         
         function analyzeContributionHistory() {
-            const startYear = parseInt(document.getElementById('cnis_start_year').value) || 1994;
+            const startYear = parseInt(document.getElementById('cnis_start_year').value) || 0;
             const currentYear = new Date().getFullYear();
             const endYear = Math.max(currentYear, 2025); 
             
@@ -437,6 +443,15 @@
             let cnisCalculatedMonths = 0; 
 
             const cnisSalaries = {}; 
+
+            if (startYear < 1994 || startYear > endYear) {
+                 return {
+                    totalAnnualSalary: 0, cnisCalculatedMonths: 0, totalContributedYears: 0,
+                    totalContributedYearsInt: 0, totalContributedMonthsInt: 0, tetoMonths: 0,
+                    belowTetoMonths: 0, tetoYears: 0, tetoRemainingMonths: 0,
+                    belowTetoYears: 0, belowTetoRemainingMonths: 0, cnisSalaries: {}
+                };
+            }
 
             for (let year = startYear; year <= endYear; year++) {
                 const input = document.getElementById(`salary_${year}`);
@@ -508,7 +523,7 @@
             
             const totalContributedYears = history.totalContributedYears;
             const totalContributedYearsInt = history.totalContributedYearsInt;
-            const totalContributedMonthsInt = history.totalContributedMonthsInt; // BUG FIX APLICADO AQUI (V10.7)
+            const totalContributedMonthsInt = history.totalContributedMonthsInt; 
 
             document.getElementById('total_contributed_time_display').innerHTML = 
                 `Tempo de Contribuição Total Válido: <span class="text-indigo-600 font-bold">${totalContributedYearsInt} anos e ${totalContributedMonthsInt} meses</span>`;
@@ -585,7 +600,7 @@
                 },
                 
                 inss: {
-                    cnis_start_year: parseInt(document.getElementById('cnis_start_year').value) || 1994,
+                    cnis_start_year: parseInt(document.getElementById('cnis_start_year').value) || 0,
                     simulate_disability: document.getElementById('simulate_disability').checked,
                     disability_type: document.querySelector('input[name="disability_type"]:checked').value,
                 },
@@ -635,7 +650,7 @@
         function loadDataFromJson(data) {
             // 1. Dados Pessoais
             if (data.personal) {
-                document.getElementById('birth_date').value = data.personal.birth_date || '1990-01-01';
+                document.getElementById('birth_date').value = data.personal.birth_date || ''; // Campo em branco
                 document.getElementById('current_salary').value = data.personal.current_salary || 0;
                 
                 const genderRadio = document.querySelector(`input[name="gender"][value="${data.personal.gender}"]`);
@@ -645,7 +660,7 @@
 
             // 2. Dados INSS
             if (data.inss) {
-                document.getElementById('cnis_start_year').value = data.inss.cnis_start_year || 1994;
+                document.getElementById('cnis_start_year').value = data.inss.cnis_start_year || 0;
                 
                 const disabilityCheckbox = document.getElementById('simulate_disability');
                 disabilityCheckbox.checked = data.inss.simulate_disability === true;
@@ -696,10 +711,10 @@
             const investmentYearsTargetInput = document.getElementById('investment_years_target');
             let investmentYearsTarget = parseInt(investmentYearsTargetInput.value); 
             
-            // Garantir que é um número válido, senão usa 1
+            // Garante que é um número válido, senão usa 1
             if (isNaN(investmentYearsTarget) || investmentYearsTarget <= 0) {
                  investmentYearsTarget = 1;
-                 investmentYearsTargetInput.value = 1; // Força a atualização do campo se for inválido
+                 investmentYearsTargetInput.value = 1; 
             }
 
             const gender = document.querySelector('input[name="gender"]:checked').value;
@@ -716,6 +731,14 @@
             }
 
             toggleDisabilityOptions();
+
+            // Só mostra os resultados se o usuário inseriu dados previdenciários básicos (pelo menos a data de início)
+            const cnisStartYear = parseInt(document.getElementById('cnis_start_year').value);
+            if (cnisStartYear < 1994 || cnisStartYear > new Date().getFullYear() || !birthDate) {
+                 document.getElementById('results_section').classList.add('hidden');
+                 return; 
+            }
+
 
             document.getElementById('results_section').classList.remove('hidden');
 
@@ -884,12 +907,12 @@
             
             document.getElementById('birth_date').addEventListener('change', () => {
                 const age = calculateAge(document.getElementById('birth_date').value);
-                document.getElementById('current_age_display').innerText = `Idade Atual: ${age} anos`;
+                document.getElementById('current_age_display').innerText = age > 0 ? `Idade Atual: ${age} anos` : '';
+                generateSalaryTable(); // Atualiza a tabela CNIS quando a data de nascimento muda
             });
             
             generateSalaryTable();
-            document.getElementById('birth_date').dispatchEvent(new Event('change'));
-            calculateAndDisplayProjections();
+            // A chamada de cálculo inicial foi removida para forçar o clique no botão
         }
     </script>
 </body>
