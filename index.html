@@ -1,0 +1,577 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Futuro Financeiro e Previdenciário</title>
+    <!-- Tailwind CSS CDN para um estilo profissional e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Charts CDN para gráficos -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; }
+        .card { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); border-radius: 1.5rem; }
+        .input-text { border-color: #d1d5db; padding: 0.75rem; transition: border-color 0.2s; }
+        .input-text:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            min-height: 350px;
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .chart-container > div {
+            width: 100%;
+            height: 100%;
+        }
+        /* Estilo para a tabela de salários */
+        .salary-input-table input {
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-5xl mx-auto bg-white p-6 sm:p-10 rounded-3xl card">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-indigo-700">Simulador de Futuro Financeiro e Previdenciário</h1>
+            <p class="text-lg text-gray-600 mt-2">Análise de Múltiplos Investimentos, CNIS e Projeções Ajustadas</p>
+        </header>
+
+        <!-- 1. Dados Pessoais e Salariais -->
+        <div class="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-700 mb-5 border-b pb-2">1. Dados Pessoais e de Projeção</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="full_name" class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                    <input type="text" id="full_name" value="Nome do Cliente" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+                <div>
+                    <label for="birth_date" class="block text-sm font-medium text-gray-700">Data de Nascimento</label>
+                    <input type="date" id="birth_date" value="1990-01-01" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+                <div>
+                    <label for="retirement_age" class="block text-sm font-medium text-gray-700">Idade de Aposentadoria Desejada</label>
+                    <input type="number" id="retirement_age" value="65" min="50" max="100" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+                <div class="md:col-span-3">
+                    <label for="illness_risk" class="block text-sm font-medium text-gray-700">Informações sobre Doenças ou Riscos (Opcional)</label>
+                    <textarea id="illness_risk" rows="2" class="mt-1 block w-full rounded-md shadow-sm input-text border" placeholder="Ex: Histórico familiar de doença cardíaca, reduz expectativa de vida para 85 anos."></textarea>
+                </div>
+            </div>
+            <p id="current_age_display" class="mt-4 text-sm font-semibold text-indigo-600">Idade Atual: -- anos</p>
+        </div>
+
+        <!-- 2. Investimentos Dinâmicos -->
+        <div class="mb-8 p-6 bg-green-50 rounded-xl border border-green-200">
+            <h2 class="text-xl font-bold text-green-700 mb-5 border-b pb-2">2. Projeção de Investimentos Pessoais</h2>
+            
+            <div id="investments_container" class="space-y-4">
+                <!-- Investimentos serão adicionados aqui -->
+            </div>
+
+            <button onclick="addInvestment()" class="mt-6 w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition duration-300">
+                + Adicionar Outro Investimento
+            </button>
+            <p class="text-xs text-gray-500 mt-3">Você pode simular o desempenho de diferentes carteiras ou produtos separadamente.</p>
+        </div>
+        
+        <!-- 3. Dados Previdenciários (INSS/CNIS) -->
+        <div class="mb-8 p-6 bg-blue-50 rounded-xl border border-blue-200">
+            <h2 class="text-xl font-bold text-blue-700 mb-5 border-b pb-2">3. Dados Previdenciários (Estimativa CNIS/INSS)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="cnis_total_contribution_time" class="block text-sm font-medium text-gray-700">Tempo de Contribuição Total (Anos)</label>
+                    <input type="number" id="cnis_total_contribution_time" value="10" min="0" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+                <div>
+                    <label for="cnis_total_contribution_value" class="block text-sm font-medium text-gray-700">Valor Total Contribuído (R$)</label>
+                    <input type="text" id="cnis_total_contribution_value" value="60000,00" placeholder="Ex: 60000,00" inputmode="numeric" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+            </div>
+
+            <h3 class="text-base font-semibold text-gray-700 mt-6 mb-3">Salários de Contribuição (Últimos Anos)</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white rounded-lg shadow-md salary-input-table">
+                    <thead>
+                        <tr class="bg-blue-100 text-blue-800 text-left text-sm font-semibold">
+                            <th class="py-2 px-4 border-b">Ano (Relativo)</th>
+                            <th class="py-2 px-4 border-b">Salário Mensal (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salary_input_body">
+                        <!-- Linhas de salário serão inseridas aqui -->
+                    </tbody>
+                </table>
+            </div>
+
+            <p id="average_salary_display" class="mt-4 text-md font-bold text-blue-700">Média Salarial dos Anos Informados: R$ --</p>
+        </div>
+        
+        <!-- 4. Parâmetros de Cálculo e Inflação -->
+        <div class="mb-10 p-6 bg-yellow-50 rounded-xl border border-yellow-200">
+            <h2 class="text-xl font-bold text-yellow-700 mb-5 border-b pb-2">4. Parâmetros de Cálculo e Metas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="current_salary" class="block text-sm font-medium text-gray-700">Salário/Renda Mensal Atual (R$)</label>
+                    <input type="text" id="current_salary" value="5000,00" placeholder="Ex: 5000,00" inputmode="numeric" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+                <div>
+                    <label for="inflation_rate" class="block text-sm font-medium text-gray-700">Taxa de Inflação Média Anual (%)</label>
+                    <input type="number" id="inflation_rate" value="4.0" step="0.1" min="0" max="10" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+                <div>
+                    <label for="target_income_percent" class="block text-sm font-medium text-gray-700">Renda Mensal Desejada (% do Último Salário)</label>
+                    <input type="number" id="target_income_percent" value="80" step="1" min="10" max="150" class="mt-1 block w-full rounded-md shadow-sm input-text border">
+                </div>
+            </div>
+        </div>
+
+        <button onclick="calculateAndDisplayProjections()" class="w-full py-4 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg rounded-xl shadow-xl transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+            <svg class="inline-block w-6 h-6 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v14M9 19h12M9 19c0 1.105-1.121 2-2.5 2S4 20.105 4 19s1.121-2 2.5-2C7.879 17 9 17.895 9 19z"></path></svg>
+            Gerar Relatório de Projeção Completa
+        </button>
+
+        <!-- Secao de Resultados -->
+        <div id="results_section" class="mt-12 hidden">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-8 border-b-2 border-indigo-200 pb-3">Resultados da Projeção</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 text-center">
+                <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-300">
+                    <p class="text-sm text-indigo-800 font-semibold">Anos Restantes</p>
+                    <p id="years_to_retirement" class="text-2xl font-extrabold text-indigo-900 mt-1">--</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg border border-green-300">
+                    <p class="text-sm text-green-800 font-semibold">Patrimônio Total (Nominal)</p>
+                    <p id="final_investment_nominal" class="text-2xl font-extrabold text-green-900 mt-1">R$ --</p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-300">
+                    <p class="text-sm text-yellow-800 font-semibold">Poder de Compra (Valor Atual)</p>
+                    <p id="final_investment_adjusted" class="text-2xl font-extrabold text-yellow-900 mt-1">R$ --</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-300">
+                    <p class="text-sm text-blue-800 font-semibold">Renda CNIS Estimada (Atualizada)</p>
+                    <p id="cnis_retirement_income_display" class="text-2xl font-extrabold text-blue-900 mt-1">R$ --</p>
+                </div>
+            </div>
+
+            <!-- Secao de Renda Projetada -->
+            <div class="mb-10 p-6 bg-gray-100 rounded-xl border border-gray-300">
+                <h3 class="text-xl font-bold text-gray-700 mb-4">Análise da Renda Mensal na Aposentadoria (Poder de Compra Atual)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-3 bg-white rounded-md border border-indigo-200">
+                        <p class="text-xs text-gray-500">Renda Mensal Alvo</p>
+                        <p id="target_monthly_income_adjusted" class="text-xl font-bold text-indigo-600 mt-1">R$ --</p>
+                    </div>
+                    <div class="p-3 bg-white rounded-md border border-green-200">
+                        <p class="text-xs text-gray-500">Renda Gerada pelos Investimentos</p>
+                        <p id="income_from_investment_display" class="text-xl font-bold text-green-600 mt-1">R$ --</p>
+                    </div>
+                    <div class="p-3 bg-white rounded-md" id="deficit_box">
+                        <p class="text-xs text-gray-500">Déficit / Superávit Mensal</p>
+                        <p id="monthly_deficit_adjusted" class="text-xl font-bold mt-1">R$ --</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Crescimento do Investimento -->
+            <h3 class="text-2xl font-bold text-gray-700 mb-4 mt-8">Gráfico de Crescimento do Patrimônio Total</h3>
+            <div class="chart-container">
+                <div id="investment_chart"></div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <script type="text/javascript">
+        google.charts.load('current', {'packages':['corechart']});
+
+        let investmentCount = 0;
+        const SALARY_YEARS_COUNT = 10; // Número de anos para a tabela de salários
+
+        /**
+         * Funções de Utilidade
+         */
+
+        /** Converte o formato numérico brasileiro (ex: 10.000,50) para o formato JS (10000.50). */
+        function parseNumberInput(id) {
+            const element = document.getElementById(id);
+            if (!element) return 0;
+            const value = element.value.trim();
+            // Permite a entrada com virgula como decimal e ponto como milhar
+            const cleanedValue = value.replace(/\./g, '').replace(',', '.');
+            return parseFloat(cleanedValue) || 0; 
+        }
+
+        /** Formata um número para moeda brasileira (R$ e vírgula decimal). */
+        function formatCurrency(value) {
+            if (typeof value !== 'number' || isNaN(value)) return 'R$ 0,00';
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        /**
+         * Lógica de Múltiplos Investimentos
+         */
+
+        /** Gera o HTML para um único bloco de investimento. */
+        function createInvestmentHtml(id) {
+            return `
+                <div id="inv_block_${id}" class="p-4 bg-white rounded-lg border border-green-300 shadow-sm relative">
+                    <button onclick="removeInvestment(${id})" class="absolute top-2 right-2 text-red-500 hover:text-red-700 focus:outline-none text-sm font-semibold">
+                        Remover
+                    </button>
+                    <h4 class="text-lg font-semibold text-green-800 mb-3">Investimento #${id}</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="inv_name_${id}" class="block text-xs font-medium text-gray-700">Nome do Investimento/Carteira</label>
+                            <input type="text" id="inv_name_${id}" value="Carteira ${id}" class="mt-1 block w-full rounded-md shadow-sm input-text border focus:border-green-500">
+                        </div>
+                        <div>
+                            <label for="inv_initial_${id}" class="block text-xs font-medium text-gray-700">Valor Inicial (R$)</label>
+                            <input type="text" id="inv_initial_${id}" value="${id === 1 ? '10000,00' : '0,00'}" placeholder="0,00" inputmode="numeric" class="mt-1 block w-full rounded-md shadow-sm input-text border focus:border-green-500">
+                        </div>
+                        <div>
+                            <label for="inv_monthly_${id}" class="block text-xs font-medium text-gray-700">Aporte Mensal (R$)</label>
+                            <input type="text" id="inv_monthly_${id}" value="${id === 1 ? '500,00' : '0,00'}" placeholder="0,00" inputmode="numeric" class="mt-1 block w-full rounded-md shadow-sm input-text border focus:border-green-500">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label for="inv_return_${id}" class="block text-xs font-medium text-gray-700">Retorno Anual Esperado (%)</label>
+                            <input type="number" id="inv_return_${id}" value="8.0" step="0.1" min="0" max="50" class="mt-1 block w-full rounded-md shadow-sm input-text border focus:border-green-500">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /** Adiciona um novo bloco de investimento ao DOM. */
+        function addInvestment() {
+            investmentCount++;
+            const container = document.getElementById('investments_container');
+            container.insertAdjacentHTML('beforeend', createInvestmentHtml(investmentCount));
+        }
+
+        /** Remove um bloco de investimento do DOM. */
+        function removeInvestment(id) {
+            const block = document.getElementById(`inv_block_${id}`);
+            if (block) {
+                block.remove();
+            }
+        }
+
+        /**
+         * Lógica de Tabela de Salários CNIS
+         */
+
+        /** Gera as linhas da tabela de salários de contribuição. */
+        function generateSalaryTable() {
+            const tableBody = document.getElementById('salary_input_body');
+            tableBody.innerHTML = '';
+            
+            for (let i = 1; i <= SALARY_YEARS_COUNT; i++) {
+                const yearText = i === 1 ? 'Ano Atual' : `Ano -${i - 1}`;
+                const defaultValue = (i <= 5) ? '4000,00' : '0,00'; // Preenche os 5 anos iniciais como exemplo
+                
+                const row = `
+                    <tr class="${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
+                        <td class="py-2 px-4 text-sm text-gray-600">${yearText}</td>
+                        <td class="py-2 px-4">
+                            <input type="text" id="salary_year_${i}" value="${defaultValue}" placeholder="0,00" inputmode="numeric" 
+                                   onchange="calculateAverageSalary()" class="block w-full rounded-md shadow-sm input-text border text-right">
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            }
+        }
+
+        /** Calcula a média salarial dos anos informados. */
+        function calculateAverageSalary() {
+            let totalSalary = 0;
+            let contributionCount = 0;
+            
+            for (let i = 1; i <= SALARY_YEARS_COUNT; i++) {
+                const salary = parseNumberInput(`salary_year_${i}`);
+                if (salary > 0) {
+                    totalSalary += salary;
+                    contributionCount++;
+                }
+            }
+            
+            const averageSalary = contributionCount > 0 ? totalSalary / contributionCount : 0;
+            
+            document.getElementById('average_salary_display').innerText = `Média Salarial dos ${contributionCount} Anos Informados: ${formatCurrency(averageSalary)}`;
+            
+            return averageSalary;
+        }
+
+        /**
+         * Funções de Cálculo
+         */
+
+        /** Calcula a idade com base na data de nascimento e exibe. */
+        function calculateAge(birthDateString) {
+            const birthDate = new Date(birthDateString);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        /** Calcula o patrimônio futuro de um único investimento. */
+        function projectSingleInvestment(initial, monthly, annualReturnRate, years) {
+            const monthlyReturnRate = Math.pow(1 + annualReturnRate, 1/12) - 1;
+            let currentCapital = initial;
+            let projectionData = [];
+
+            for (let i = 0; i <= years; i++) {
+                if (i > 0) {
+                    // Capitalização do ano anterior
+                    currentCapital *= (1 + annualReturnRate);
+                    
+                    // Cálculo do valor futuro das 12 contribuições mensais do ano
+                    let monthlyContributionsFV = 0;
+                    if (monthlyReturnRate > 0) {
+                        // Fórmula para Valor Futuro de uma série de pagamentos no início do período
+                        monthlyContributionsFV = monthly * (Math.pow(1 + monthlyReturnRate, 12) - 1) / monthlyReturnRate * (1 + monthlyReturnRate);
+                    } else {
+                        monthlyContributionsFV = monthly * 12; // Se o retorno for 0
+                    }
+
+                    currentCapital += monthlyContributionsFV;
+                }
+                projectionData.push(currentCapital);
+            }
+            return projectionData;
+        }
+
+        /**
+         * Realiza todos os cálculos de projeção e exibe os resultados na UI.
+         */
+        function calculateAndDisplayProjections() {
+            // --- 1. COLETA DE DADOS ---
+            const birthDateStr = document.getElementById('birth_date').value;
+            const currentAge = calculateAge(birthDateStr);
+            const retirementAge = parseNumberInput('retirement_age');
+            const currentSalary = parseNumberInput('current_salary');
+            const inflationRate = parseNumberInput('inflation_rate') / 100;
+            const targetIncomePercent = parseNumberInput('target_income_percent') / 100;
+            
+            const cnisTime = parseNumberInput('cnis_total_contribution_time');
+            const cnisTotalValue = parseNumberInput('cnis_total_contribution_value'); 
+            const averageSalary = calculateAverageSalary(); // Pega a média calculada da tabela
+
+            document.getElementById('current_age_display').innerText = `Idade Atual: ${currentAge} anos`;
+
+            const yearsToRetirement = retirementAge - currentAge;
+            
+            if (yearsToRetirement <= 0) {
+                alert('A idade de aposentadoria deve ser maior que a idade atual para realizar uma projeção.'); 
+                document.getElementById('results_section').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('years_to_retirement').innerText = `${yearsToRetirement} anos`;
+
+            // --- 2. CÁLCULO DE INVESTIMENTOS (Agregação de Múltiplos Investimentos) ---
+            let totalProjectionData = [];
+            let maxProjectionLength = 0;
+
+            const investmentBlocks = document.querySelectorAll('[id^="inv_block_"]');
+            
+            if (investmentBlocks.length === 0) {
+                alert('Adicione pelo menos um bloco de investimento.');
+                document.getElementById('results_section').classList.add('hidden');
+                return;
+            }
+
+            investmentBlocks.forEach(block => {
+                const id = block.id.replace('inv_block_', '');
+                const initial = parseNumberInput(`inv_initial_${id}`);
+                const monthly = parseNumberInput(`inv_monthly_${id}`);
+                const annualReturnRate = parseNumberInput(`inv_return_${id}`) / 100;
+                
+                const singleProjection = projectSingleInvestment(initial, monthly, annualReturnRate, yearsToRetirement);
+                
+                if (singleProjection.length > maxProjectionLength) {
+                    maxProjectionLength = singleProjection.length;
+                }
+                
+                totalProjectionData.push({
+                    name: document.getElementById(`inv_name_${id}`).value,
+                    data: singleProjection
+                });
+            });
+
+            // Agregação dos dados em um único array (Patrimônio Total)
+            let rawData = [['Ano', 'Patrimônio Total (Nominal)', 'Poder de Compra (Ajustado)']];
+            let finalInvestmentNominal = 0;
+            
+            for (let i = 0; i < maxProjectionLength; i++) {
+                let nominalTotal = 0;
+                totalProjectionData.forEach(inv => {
+                    nominalTotal += inv.data[i] || 0; 
+                });
+
+                finalInvestmentNominal = nominalTotal; 
+                
+                // Ajuste pela inflação
+                const currentYear = i;
+                const inflationAdjustmentFactor = Math.pow(1 + inflationRate, currentYear);
+                const adjustedTotal = nominalTotal / (inflationAdjustmentFactor > 0 ? inflationAdjustmentFactor : 1);
+
+                rawData.push([
+                    `Ano ${currentYear}`, 
+                    parseFloat(nominalTotal.toFixed(2)), 
+                    parseFloat(adjustedTotal.toFixed(2))
+                ]);
+            }
+            
+            // O último valor da projeção ajustada é o poder de compra real
+            const finalInvestmentAdjusted = rawData[rawData.length - 1][2];
+
+            // --- 3. CÁLCULO PREVIDENCIÁRIO (CNIS/INSS) ---
+            
+            // Teto do INSS (Simulação)
+            const inssCeiling = 7786.02; // Valor aproximado para 2024/2025
+            
+            // Estimativa baseada na média salarial calculada
+            let cnisRetirementIncome = averageSalary;
+            
+            // Limita a aposentadoria ao teto do INSS
+            cnisRetirementIncome = Math.min(cnisRetirementIncome, inssCeiling);
+            
+            // Nota: O valor CNIS/INSS é mantido como poder de compra "atualizado"
+            const cnisRetirementIncomeAdjusted = cnisRetirementIncome; 
+
+            document.getElementById('cnis_retirement_income_display').innerText = formatCurrency(cnisRetirementIncomeAdjusted);
+            
+            // --- 4. CÁLCULO DA META E DÉFICIT ---
+            
+            // Salário Nominal Futuro (ajustado pela inflação anual)
+            let finalSalaryNominal = currentSalary * Math.pow(1 + inflationRate, yearsToRetirement); 
+            
+            // Renda Alvo Nominal (ex: 80% do Salário Nominal Futuro)
+            const targetIncomeNominal = finalSalaryNominal * targetIncomePercent;
+
+            // Renda Alvo Ajustada ao poder de compra de hoje
+            const targetMonthlyIncomeAdjusted = targetIncomeNominal / Math.pow(1 + inflationRate, yearsToRetirement);
+            
+            // Renda Gerada pelo Investimento (Regra dos 4% de saque anual seguro)
+            const incomeFromInvestment = finalInvestmentAdjusted * 0.04 / 12;
+            
+            // Renda Total na Aposentadoria (Poder de Compra Ajustado)
+            const totalProjectedIncome = incomeFromInvestment + cnisRetirementIncomeAdjusted; 
+            
+            const difference = totalProjectedIncome - targetMonthlyIncomeAdjusted;
+
+            // --- 5. EXIBIÇÃO E ESTILIZAÇÃO ---
+            
+            document.getElementById('final_investment_nominal').innerText = formatCurrency(finalInvestmentNominal);
+            document.getElementById('final_investment_adjusted').innerText = formatCurrency(finalInvestmentAdjusted);
+            document.getElementById('target_monthly_income_adjusted').innerText = formatCurrency(targetMonthlyIncomeAdjusted);
+            document.getElementById('income_from_investment_display').innerText = formatCurrency(incomeFromInvestment);
+
+            const deficitBox = document.getElementById('deficit_box');
+            const deficitText = document.getElementById('monthly_deficit_adjusted');
+            
+            // Limpa classes anteriores
+            deficitText.classList.remove('text-red-600', 'text-green-600', 'text-yellow-600');
+            deficitBox.classList.remove('border-red-500', 'border-green-500', 'border-yellow-200');
+
+            if (difference < -10) { // Déficit significativo
+                const monthlyDeficitAdjusted = Math.abs(difference);
+                deficitText.innerText = formatCurrency(monthlyDeficitAdjusted) + ' (DÉFICIT)';
+                deficitText.classList.add('text-red-600');
+                deficitBox.classList.add('border-red-500');
+                
+            } else if (difference > 10) { // Superávit significativo
+                const monthlySurplusAdjusted = difference;
+                deficitText.innerText = formatCurrency(monthlySurplusAdjusted) + ' (SUPERÁVIT)';
+                deficitText.classList.add('text-green-600');
+                deficitBox.classList.add('border-green-500');
+            } else { // Neutro/Perto da meta
+                deficitText.innerText = formatCurrency(0) + ' (NEUTRO)';
+                deficitText.classList.add('text-yellow-600');
+                deficitBox.classList.add('border-yellow-200');
+            }
+
+            // --- 6. GRÁFICOS ---
+            drawInvestmentChart(rawData);
+            
+            document.getElementById('results_section').classList.remove('hidden');
+        }
+
+
+        /** Desenha o gráfico principal de Investimento (Nominal vs. Poder de Compra). */
+        function drawInvestmentChart(rawData) {
+            
+            var data = google.visualization.arrayToDataTable(rawData);
+
+            var options = {
+                title: 'Patrimônio Total Acumulado - Projeção de Múltiplos Investimentos',
+                curveType: 'function',
+                legend: { position: 'bottom' },
+                vAxis: { 
+                    title: 'Valor Acumulado (R$)', 
+                    format: 'currency',
+                    gridlines: { count: 10 }
+                },
+                hAxis: { 
+                    title: 'Ano', 
+                    titleTextStyle: { italic: false },
+                    gridlines: { count: 10 }
+                },
+                series: {
+                    0: { color: '#1e40af', lineWidth: 3 }, // Nominal (Azul Escuro)
+                    1: { color: '#059669', lineWidth: 3 }  // Ajustado (Verde)
+                },
+                pointSize: 4,
+                chartArea: { left: '15%', top: '5%', width: '80%', height: '80%' }
+            };
+
+            var chart = new google.visualization.LineChart(document.getElementById('investment_chart'));
+            chart.draw(data, options);
+        }
+
+        // --- Inicialização ---
+
+        // Adiciona um investimento inicial ao carregar a página
+        addInvestment(); 
+        
+        // Garante que o cálculo inicial seja executado (e os gráficos sejam desenhados)
+        window.onload = function() {
+            // Recálculo ao redimensionar (para responsividade do gráfico)
+            window.addEventListener('resize', function() {
+                if (document.getElementById('results_section').classList.contains('hidden') === false) {
+                    calculateAndDisplayProjections();
+                }
+            });
+            
+            // Associa a função de cálculo de idade à mudança da data de nascimento
+            document.getElementById('birth_date').addEventListener('change', () => {
+                const age = calculateAge(document.getElementById('birth_date').value);
+                document.getElementById('current_age_display').innerText = `Idade Atual: ${age} anos`;
+            });
+            
+            // Gera a tabela de salários CNIS
+            generateSalaryTable();
+            calculateAverageSalary(); // Calcula a média inicial
+
+            // Executa o cálculo inicial para preencher com valores padrão
+            document.getElementById('birth_date').dispatchEvent(new Event('change'));
+            calculateAndDisplayProjections();
+        }
+    </script>
+</body>
+</html>
